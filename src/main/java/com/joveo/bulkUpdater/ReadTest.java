@@ -7,8 +7,12 @@ import com.joveo.eqrtestsdk.core.entities.Driver;
 import com.joveo.eqrtestsdk.exception.MojoException;
 import com.joveo.eqrtestsdk.models.JobGroupDto;
 import com.joveo.eqrtestsdk.models.JoveoEnvironment;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -27,20 +31,23 @@ import java.util.stream.Collectors;
 // 2 document level rules
 // all required columns present or not
 // each placement is present in group of 7 fields
-
+@Slf4j
 public class ReadTest {
 
     private static int lowestNumPlacement = -1;
     private static int highestNumPlacement = -1;
 
     public static void readFile() {
+        boolean validationOnly = CliUtils.hasOption(CliUtils.VALIDATION_ONLY);
         File file = new File(CliUtils.getOption(CliUtils.FILE_INPUT));
         Reader in = null;
-        String[] credential = CliUtils.getOption(CliUtils.CREDENTIAL).split(":");
-        String username = credential[0];
-        String password = credential[1];
+        String[] credentials = CliUtils.getOption(CliUtils.CREDENTIAL).split(":");
+        String username = credentials[0];
+        String password = credentials[1];
         String env = CliUtils.getOption(CliUtils.ENVIRONMENT).substring(0, 1).toUpperCase() + CliUtils.getOption(CliUtils.ENVIRONMENT).substring(1).toLowerCase();
         JoveoEnvironment environment = JoveoEnvironment.valueOf(env);
+
+        List<ValidationResult> errorRows = new ArrayList<>();
 
         try {
             in = new FileReader(file);
@@ -53,10 +60,30 @@ public class ReadTest {
 
             records.stream().map(record -> rules.validate(record)).forEach(
                     result -> {
-                        System.out.println(result);
+                        if(!result.isValid()){
+                            errorRows.add(result);
+                        }else {
+                            if(!validationOnly){
+                                flow.processRecord(result.getRecord());
+                            }
+                        }
                     }
             );
 
+            flow.writeFailedRows();
+
+            String outputFile = "rows_validation_error.csv";
+            CSVPrinter csvFilePrinter = null;
+            CSVFormat csvFileFormat = CSVFormat.EXCEL.builder().build();
+            FileWriter fileWriter = new FileWriter(outputFile);
+            csvFilePrinter = new CSVPrinter(fileWriter, csvFileFormat);
+
+            csvFilePrinter.printRecords(errorRows);
+
+
+            fileWriter.flush();
+            fileWriter.close();
+            csvFilePrinter.close();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

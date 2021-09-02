@@ -20,4 +20,9 @@ public class ValidationResult {
         this.messages.add(message);
         return this;
     }
+
+    @Override
+    public String toString(){
+        return this.record.getRecordNumber() + "," + record.get("jobGroupId") + ","  + String.join(",", this.messages);
+    }
 }
