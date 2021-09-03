@@ -15,6 +15,7 @@ Staging
 Usage
 
 usage: bulkUpdater CLI args are
+
 -a,--add-jobgroup                          if specified, adds a new job group
 
 -c,--client-id &lt;clientId>               specify client id for update
