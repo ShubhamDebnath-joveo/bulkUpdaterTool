@@ -3,6 +3,7 @@ package com.joveo.bulkUpdater.validationRules;
 import com.joveo.bulkUpdater.CliUtils;
 import com.joveo.bulkUpdater.model.JoveoException;
 import com.joveo.bulkUpdater.validationRules.field.BlankCheck;
+import com.joveo.bulkUpdater.validationRules.field.DefaultJGCheck;
 import com.joveo.bulkUpdater.validationRules.field.DoubleCheck;
 import com.joveo.bulkUpdater.validationRules.field.DuplicateCheck;
 import com.joveo.eqrtestsdk.core.entities.Driver;
@@ -55,6 +56,11 @@ public class EditFlow extends Flow {
         }
 
         for (String colName : headers) {
+
+            if(colName.equals("jobGroupId")){
+                rule = new DefaultJGCheck(colName, rule);
+            }
+
             if (coreFields.contains(colName)) {
                 rule = new BlankCheck(colName, rule);
                 rule = new DuplicateCheck(colName, rule);
@@ -87,7 +93,7 @@ public class EditFlow extends Flow {
         } catch (Exception e) {
             String msg = "Record: " + record.getRecordNumber() + " Failed for " + record.get("jobGroupId") + " for name " + record.get("jobGroupName") + " because " + e.getMessage();
             log.info(msg);
-            failedRows.add(msg);
+            failedRows.add(record.getRecordNumber() + "," + record.get("jobGroupId") + "," + e.getMessage());
         }
 
     }
@@ -99,6 +105,7 @@ public class EditFlow extends Flow {
         double threshold = -1;
         double value = -1;
         boolean locked = false;
+
         JobGroupDto jgDto = new JobGroupDto();
         jgDto.setClientId(CliUtils.getOption(CliUtils.CLIENT_ID));
         jgDto.setJobGroupId(record.get("jobGroupId"));

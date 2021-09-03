@@ -2,6 +2,7 @@ package com.joveo.bulkUpdater;
 
 import com.joveo.bulkUpdater.model.JoveoException;
 import com.joveo.bulkUpdater.model.ValidationResult;
+import com.joveo.bulkUpdater.util.Util;
 import com.joveo.bulkUpdater.validationRules.*;
 import com.joveo.eqrtestsdk.core.entities.Driver;
 import com.joveo.eqrtestsdk.exception.MojoException;
@@ -32,10 +33,11 @@ import java.util.stream.Collectors;
 // all required columns present or not
 // each placement is present in group of 7 fields
 @Slf4j
-public class ReadTest {
+public class ReadUtil {
 
     private static int lowestNumPlacement = -1;
     private static int highestNumPlacement = -1;
+    private static final String CSV_FILE_NAME = "rows_validation_error.csv";
 
     public static void readFile() {
         boolean validationOnly = CliUtils.hasOption(CliUtils.VALIDATION_ONLY);
@@ -48,6 +50,7 @@ public class ReadTest {
         JoveoEnvironment environment = JoveoEnvironment.valueOf(env);
 
         List<ValidationResult> errorRows = new ArrayList<>();
+        List<ValidationResult> validRows = new ArrayList<>();
 
         try {
             in = new FileReader(file);
@@ -61,29 +64,27 @@ public class ReadTest {
             records.stream().map(record -> rules.validate(record)).forEach(
                     result -> {
                         if(!result.isValid()){
+                            log.info(result.toString());
                             errorRows.add(result);
                         }else {
                             if(!validationOnly){
-                                flow.processRecord(result.getRecord());
+                                validRows.add(result);
                             }
                         }
                     }
             );
 
+            validRows.forEach(row -> flow.processRecord(row.getRecord()));
             flow.writeFailedRows();
 
-            String outputFile = "rows_validation_error.csv";
-            CSVPrinter csvFilePrinter = null;
-            CSVFormat csvFileFormat = CSVFormat.EXCEL.builder().build();
-            FileWriter fileWriter = new FileWriter(outputFile);
-            csvFilePrinter = new CSVPrinter(fileWriter, csvFileFormat);
 
-            csvFilePrinter.printRecords(errorRows);
-
-
-            fileWriter.flush();
-            fileWriter.close();
-            csvFilePrinter.close();
+            File csvOutputFile = new File(CSV_FILE_NAME);
+            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+                pw.println("RowNumber,jobGroupId,Reason");
+                errorRows.stream()
+                        .map(d -> Util.escapeSpecialCharacters(d.toString()))
+                        .forEach(pw::println);
+            }
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

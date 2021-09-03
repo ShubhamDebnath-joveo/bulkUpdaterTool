@@ -3,11 +3,11 @@
 sample arguments
 
 -c
-9f4cc766-cc05-42f3-8a7f-80841719cb90
+b84dba55-f805-41fa-8844-2c34983822d2
 -i
-PacingLogiv.csv
+test_client_shubham.csv.csv
 -p
-ripple@joveo.com:ripple
+username:password
 -e
 Staging
 

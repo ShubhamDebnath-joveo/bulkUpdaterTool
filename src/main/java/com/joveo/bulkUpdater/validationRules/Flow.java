@@ -1,13 +1,16 @@
 package com.joveo.bulkUpdater.validationRules;
 
+import com.joveo.bulkUpdater.util.Util;
 import com.joveo.eqrtestsdk.core.entities.Driver;
 import com.joveo.eqrtestsdk.models.JobGroupDto;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -21,14 +24,13 @@ public abstract class Flow {
     protected int highestNumPlacement = -1;
     protected Set<String> headers = null;
     protected Driver driver;
-    protected String fileName;
+    protected static final String CSV_FILE_NAME = "rows_sdk_failure.csv";
     protected List<String> failedRows;
 
     public Flow(Set<String> headers, Driver driver){
         this.headers = headers;
         this.driver = driver;
         setNumPlacement();
-        fileName = "rows_sdk_failure.csv";
         failedRows = new ArrayList<>();
     }
 
@@ -58,18 +60,13 @@ public abstract class Flow {
     }
 
     public void writeFailedRows() throws IOException {
-        String outputFile = fileName;
-        CSVPrinter csvFilePrinter = null;
-        CSVFormat csvFileFormat = CSVFormat.EXCEL.builder().build();
-        FileWriter fileWriter = new FileWriter(outputFile);
-        csvFilePrinter = new CSVPrinter(fileWriter, csvFileFormat);
-
-        csvFilePrinter.printRecords(failedRows);
-
-
-        fileWriter.flush();
-        fileWriter.close();
-        csvFilePrinter.close();
+        File csvOutputFile = new File(CSV_FILE_NAME);
+        try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+            pw.println("RowNumber,jobGroupId,Reason");
+            failedRows.stream()
+                    .map(d -> Util.escapeSpecialCharacters(d))
+                    .forEach(pw::println);
+        }
     }
 
 }
