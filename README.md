@@ -15,17 +15,16 @@ Staging
 Usage
 
 usage: bulkUpdater CLI args are
--a,--add-jobgroup                     if specified, adds a new job group
+-a,--add-jobgroup                          if specified, adds a new job group
 
--c,--client-id &lt;clientId>             specify client id for update
+-c,--client-id &lt;clientId>               specify client id for update
 
--e,--environment &lt;env>                specify joveo environment to
+-e,--environment &lt;env>                  specify joveo environment to connect
 
-connect
--h,--help                             shows cli commands
+-h,--help                                  shows cli commands
 
--i,--file-input &lt;filename>            specify relative file path for input
+-i,--file-input &lt;filename>              specify relative file path for input
 
--p,--credential &lt;username:password>   specify username:password to connect
+-p,--credential &lt;username:password>     specify username:password to connect
 
--v,--validation-only                  if specified, only runs validation stage and not update
+-v,--validation-only                       if specified, only runs validation stage and not update
