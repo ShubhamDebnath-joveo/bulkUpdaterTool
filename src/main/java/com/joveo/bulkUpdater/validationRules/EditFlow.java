@@ -2,10 +2,7 @@ package com.joveo.bulkUpdater.validationRules;
 
 import com.joveo.bulkUpdater.CliUtils;
 import com.joveo.bulkUpdater.model.JoveoException;
-import com.joveo.bulkUpdater.validationRules.field.BlankCheck;
-import com.joveo.bulkUpdater.validationRules.field.DefaultJGCheck;
-import com.joveo.bulkUpdater.validationRules.field.DoubleCheck;
-import com.joveo.bulkUpdater.validationRules.field.DuplicateCheck;
+import com.joveo.bulkUpdater.validationRules.field.*;
 import com.joveo.eqrtestsdk.core.entities.Driver;
 import com.joveo.eqrtestsdk.core.entities.JobGroup;
 import com.joveo.eqrtestsdk.models.CapDto;
@@ -51,6 +48,14 @@ public class EditFlow extends Flow {
                 String keyPrefix = "placements_" + i + "_" + field;
                 if (!headers.contains(keyPrefix)) {
                     throw new JoveoException(keyPrefix + " not found in sheet");
+                }
+
+                if(field.equals("bid")){
+                    rule = new PlacementNameCheck(keyPrefix, rule);
+                }
+
+                if(keyPrefix.contains("bid") || keyPrefix.contains("budget_value") ||keyPrefix.contains("thresholdP")){
+                    rule = new DoubleCheck(keyPrefix, rule);
                 }
             }
         }
