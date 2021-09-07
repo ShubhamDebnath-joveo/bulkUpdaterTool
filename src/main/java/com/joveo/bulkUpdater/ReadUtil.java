@@ -21,17 +21,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// check first non-empty row for header
-// if edit mode , then only jobgroupId mandatory
-// name may be duplicate, but corresponding jobGroupId cant be
-// separate validate and run methods (as an interface) for create and edit mode
-// under dry-run mode, only run validate
-// 1 class for reading and building object
-// 1 interface for edit or create mode, it will have validate and run function, in edit mode only validate
-
-// 2 document level rules
-// all required columns present or not
-// each placement is present in group of 7 fields
 @Slf4j
 public class ReadUtil {
 

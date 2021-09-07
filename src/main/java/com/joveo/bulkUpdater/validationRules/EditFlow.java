@@ -10,16 +10,14 @@ import com.joveo.eqrtestsdk.models.Freq;
 import com.joveo.eqrtestsdk.models.JobGroupDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-// sagar - ask for default on caps values incase of partial fields
-// vishal - ask for activaeSTatus field on jobGroup
+
 @Slf4j
 public class EditFlow extends Flow {
 
@@ -33,6 +31,20 @@ public class EditFlow extends Flow {
     public EditFlow(Set<String> headers, Driver driver) {
         super(headers, driver);
     }
+
+/*
+ check first non-empty row for header
+ if edit mode , then only jobgroupId mandatory
+ name may be duplicate, but corresponding jobGroupId cant be
+ separate validate and run methods (as an interface) for create and edit mode
+ under dry-run mode, only run validate
+ 1 class for reading and building object
+ 1 interface for edit or create mode, it will have validate and run function, in edit mode only validate
+
+ 2 document level rules
+ all required columns present or not
+ each placement is present in group of 7 fields
+ */
 
     @Override
     public FieldLevelRule buildRules() {
@@ -110,6 +122,8 @@ public class EditFlow extends Flow {
         double threshold = -1;
         double value = -1;
         boolean locked = false;
+        boolean active = false;
+        String placementName = "";
 
         JobGroupDto jgDto = new JobGroupDto();
         jgDto.setClientId(CliUtils.getOption(CliUtils.CLIENT_ID));
@@ -155,10 +169,20 @@ public class EditFlow extends Flow {
         List<JobGroupDto.JobGroupParams.Placements> placements = new ArrayList<>();
         for (int i = lowestNumPlacement; i <= highestNumPlacement; i++) {
             String keyPrefix = "placements_" + i + "_";
+
+            placementName = record.get(keyPrefix + "value");
+            if( record.isMapped(keyPrefix + "is_active") && !isEmpty(record.get(keyPrefix + "is_active"))) {
+                active = Boolean.parseBoolean(record.get(keyPrefix + "is_active"));
+                if(!active) {
+                    jgDto.removePlacement(placementName);
+                }
+            }
+
             if (isEmpty(record.get(keyPrefix + "bid"))) {
                 continue;
             }
-            JobGroupDto.JobGroupParams.Placements placement = new JobGroupDto.JobGroupParams.Placements(record.get(keyPrefix + "value"));
+
+            JobGroupDto.JobGroupParams.Placements placement = new JobGroupDto.JobGroupParams.Placements(placementName);
             placement.setBid(Double.parseDouble(record.get(keyPrefix + "bid")));
 
             if(record.isMapped(keyPrefix + "caps_budget_value") && !isEmpty(record.get(keyPrefix + "caps_budget_value"))) {
@@ -169,6 +193,7 @@ public class EditFlow extends Flow {
                 locked = record.isMapped(keyPrefix + "caps_budget_locked") && !isEmpty(record.get(keyPrefix + "caps_budget_locked")) && Boolean.parseBoolean(record.get(keyPrefix + "caps_budget_locked"));
 
                 placement.setBudget(new CapDto(pacing, freq, threshold, value, locked));
+
             }
 
             placements.add(placement);
