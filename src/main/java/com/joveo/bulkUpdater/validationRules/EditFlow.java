@@ -25,6 +25,8 @@ public class EditFlow extends Flow {
     private static List<String> doubleFields = List.of("cpcBid", "cpaBid", "caps_budget_value", "caps_clicks_value",
             "caps_applies_value", "caps_budget_thresholdP", "caps_clicks_thresholdP",
             "caps_applies_thresholdP");
+    private static List<String> booleanFields = List.of("caps_budget_pacing", "caps_budget_locked", "caps_clicks_pacing",
+            "caps_clicks_locked","caps_applies_pacing", "caps_applies_locked");
     private static List<String> placementFields = List.of("value", "bid", "caps_budget_cap",
             "caps_budget_value", "caps_budget_pacing", "caps_budget_thresholdP", "caps_budget_locked", "is_active");
 
@@ -69,6 +71,10 @@ public class EditFlow extends Flow {
                 if(keyPrefix.contains("bid") || keyPrefix.contains("budget_value") ||keyPrefix.contains("thresholdP")){
                     rule = new DoubleCheck(keyPrefix, rule);
                 }
+
+                if(field.equals("is_active") || field.equals("caps_budget_locked") || field.equals("caps_budget_pacing")){
+                    rule = new BooleanCheck(keyPrefix, rule);
+                }
             }
         }
 
@@ -85,6 +91,10 @@ public class EditFlow extends Flow {
 
             if (doubleFields.contains(colName)) {
                 rule = new DoubleCheck(colName, rule);
+            }
+
+            if (booleanFields.contains(colName)) {
+                rule = new BooleanCheck(colName, rule);
             }
         }
         return rule;

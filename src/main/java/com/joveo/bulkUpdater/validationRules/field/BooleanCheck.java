@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.csv.CSVRecord;
 
 @AllArgsConstructor
-public class DoubleCheck extends FieldLevelRule {
+public class BooleanCheck extends FieldLevelRule {
 
     private String columnName;
 
@@ -19,10 +19,10 @@ public class DoubleCheck extends FieldLevelRule {
         if(record.get(columnName).isBlank()){
             return result;
         }
-        try {
-            Double.parseDouble(record.get(columnName));
-        }catch (NumberFormatException nfe){
-            result.updateResult(false, String.format(this.errMsg(), nfe.getMessage(), columnName, record.getRecordNumber()));
+
+        String val = record.get(columnName);
+        if(!val.equalsIgnoreCase("true") && !val.equalsIgnoreCase("true")){
+            result.updateResult(false, String.format(this.errMsg(), val, columnName, record.getRecordNumber()));
         }
 
         return result;
@@ -30,6 +30,6 @@ public class DoubleCheck extends FieldLevelRule {
 
     @Override
     public String errMsg() {
-        return "Double expected: %s  for %s at row number: %d";
+        return "Boolean expected: but got :%s  for %s at row number: %d";
     }
 }
