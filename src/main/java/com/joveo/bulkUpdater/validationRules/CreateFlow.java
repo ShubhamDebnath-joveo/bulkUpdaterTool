@@ -21,7 +21,7 @@ public class CreateFlow extends Flow {
         super(headers, driver);
     }
 
-    private static List<String> coreFields = List.of("jobGroupName", "campaignId", "startDate", "endDate", "caps_budget_cap",
+    private static List<String> mandatoryFields = List.of("jobGroupName", "campaignId", "startDate", "endDate", "caps_budget_cap",
             "caps_budget_value", "caps_budget_pacing", "caps_budget_thresholdP", "caps_budget_locked");
     private static List<String> doubleFields = List.of("cpcBid", "cpaBid", "caps_budget_value", "caps_clicks_value",
             "caps_applies_value", "caps_budget_thresholdP", "caps_clicks_thresholdP",
@@ -37,7 +37,7 @@ public class CreateFlow extends Flow {
         FieldLevelRule rule = new FieldLevelRule() {
         };
 
-        for(String coreField: coreFields){
+        for(String coreField: mandatoryFields){
             if (!headers.contains(coreField) ) {
                 throw new JoveoException(coreField + " not found in sheet");
             }
@@ -66,7 +66,7 @@ public class CreateFlow extends Flow {
 
         for (String colName : headers) {
 
-            if (coreFields.contains(colName)) {
+            if (mandatoryFields.contains(colName)) {
                 rule = new BlankCheck(colName, rule);
             }
 

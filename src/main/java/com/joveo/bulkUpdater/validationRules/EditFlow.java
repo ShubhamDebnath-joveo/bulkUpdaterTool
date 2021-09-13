@@ -21,7 +21,7 @@ import java.util.Set;
 @Slf4j
 public class EditFlow extends Flow {
 
-    private static List<String> coreFields = List.of("jobGroupId");
+    private static List<String> mandatoryFields = List.of("jobGroupId");
     private static List<String> doubleFields = List.of("cpcBid", "cpaBid", "caps_budget_value", "caps_clicks_value",
             "caps_applies_value", "caps_budget_thresholdP", "caps_clicks_thresholdP",
             "caps_applies_thresholdP");
@@ -84,7 +84,7 @@ public class EditFlow extends Flow {
                 rule = new DefaultJGCheck(colName, rule);
             }
 
-            if (coreFields.contains(colName)) {
+            if (mandatoryFields.contains(colName)) {
                 rule = new BlankCheck(colName, rule);
                 rule = new DuplicateCheck(colName, rule);
             }
