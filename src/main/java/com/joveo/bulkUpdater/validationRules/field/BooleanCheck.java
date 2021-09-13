@@ -21,7 +21,7 @@ public class BooleanCheck extends FieldLevelRule {
         }
 
         String val = record.get(columnName);
-        if(!val.equalsIgnoreCase("true") && !val.equalsIgnoreCase("true")){
+        if(!val.equalsIgnoreCase("true") && !val.equalsIgnoreCase("false")){
             result.updateResult(false, String.format(this.errMsg(), val, columnName, record.getRecordNumber()));
         }
 
