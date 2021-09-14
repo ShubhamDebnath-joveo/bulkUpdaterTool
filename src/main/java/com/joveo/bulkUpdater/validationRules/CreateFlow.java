@@ -2,6 +2,7 @@ package com.joveo.bulkUpdater.validationRules;
 
 import com.joveo.bulkUpdater.CliUtils;
 import com.joveo.bulkUpdater.model.JoveoException;
+import com.joveo.bulkUpdater.util.Util;
 import com.joveo.bulkUpdater.validationRules.field.*;
 import com.joveo.eqrtestsdk.core.entities.Driver;
 import com.joveo.eqrtestsdk.core.entities.JobGroup;
@@ -82,8 +83,12 @@ public class CreateFlow extends Flow {
                 rule = new BooleanCheck(colName, rule);
             }
 
-            if(colName.contains("rules_operator")){
+            if(colName.contains("rules_operator") || colName.equalsIgnoreCase("filters_operator")){
                 rule = new OperatorCheck(colName, rule);
+            }
+
+            if(colName.endsWith("_cap")){
+                rule = new FreqCheck(colName, rule);
             }
         }
         return rule;
@@ -151,7 +156,7 @@ public class CreateFlow extends Flow {
 
             if(record.isMapped(capPrefix + "value") && !isEmpty(record.get(capPrefix + "value"))){
                 pacing = record.isMapped(capPrefix + "pacing") && !isEmpty(record.get(capPrefix + "pacing")) && Boolean.parseBoolean(record.get(capPrefix + "pacing"));
-                freq = record.isMapped(capPrefix + "cap") && !isEmpty(record.get(capPrefix + "cap")) ? Freq.valueOf(record.get(capPrefix + "cap")) : Freq.Monthly;
+                freq = record.isMapped(capPrefix + "cap") && !isEmpty(record.get(capPrefix + "cap")) ? Util.searchEnum(Freq.class, record.get(capPrefix + "cap")) : Freq.Monthly;
                 threshold = record.isMapped(capPrefix + "thresholdP") && !isEmpty(record.get(capPrefix + "thresholdP")) ? Double.parseDouble(record.get(capPrefix + "thresholdP")) : 80;
                 value = Double.parseDouble(record.get(capPrefix + "value"));
 
@@ -195,7 +200,7 @@ public class CreateFlow extends Flow {
             if(field == null || operator == null || data == null){
                 continue;
             }
-            rules.add(new JobFilter(RuleOperator.valueOf(operator), field, data));
+            rules.add(new JobFilter(Util.searchEnum(RuleOperator.class, operator), field, data));
         }
 
         if(rules.size() == 0){
@@ -226,7 +231,7 @@ public class CreateFlow extends Flow {
 
             if(record.isMapped(keyPrefix + "caps_budget_value") && !isEmpty(record.get(keyPrefix + "caps_budget_value"))) {
                 pacing = record.isMapped(keyPrefix + "caps_budget_pacing") && !isEmpty(record.get(keyPrefix + "caps_budget_pacing")) && Boolean.parseBoolean(record.get(keyPrefix + "caps_budget_pacing"));
-                freq = record.isMapped(keyPrefix + "caps_budget_cap") && !isEmpty(record.get(keyPrefix + "caps_budget_cap")) ? Freq.valueOf(record.get(keyPrefix + "caps_budget_cap")) : Freq.Monthly;
+                freq = record.isMapped(keyPrefix + "caps_budget_cap") && !isEmpty(record.get(keyPrefix + "caps_budget_cap")) ? Util.searchEnum(Freq.class, record.get(keyPrefix + "caps_budget_cap")) : Freq.Monthly;
                 threshold = record.isMapped(keyPrefix + "caps_budget_thresholdP") && !isEmpty(record.get(keyPrefix + "caps_budget_thresholdP")) ? Double.parseDouble(record.get(keyPrefix + "caps_budget_thresholdP")) : 80;
                 value = Double.parseDouble(record.get(keyPrefix + "caps_budget_value"));
                 locked = record.isMapped(keyPrefix + "caps_budget_locked") && !isEmpty(record.get(keyPrefix + "caps_budget_locked")) && Boolean.parseBoolean(record.get(keyPrefix + "caps_budget_locked"));

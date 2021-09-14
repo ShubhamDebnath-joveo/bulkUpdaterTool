@@ -19,7 +19,7 @@ public abstract class Flow {
     protected int highestNumFilter = -1;
     protected Set<String> headers = null;
     protected Driver driver;
-    protected static final String CSV_FILE_NAME = "rows_sdk_failure.csv";
+    protected static final String CSV_FILE_NAME = "mojo-errors.csv";
     protected List<String> failedRows;
 
     public Flow(Set<String> headers, Driver driver){

@@ -26,7 +26,7 @@ public class ReadUtil {
 
     private static int lowestNumPlacement = -1;
     private static int highestNumPlacement = -1;
-    private static final String CSV_FILE_NAME = "rows_validation_error.csv";
+    private static final String CSV_FILE_NAME = "validation-errors.csv";
 
     public static void readFile() {
         boolean validationOnly = CliUtils.hasOption(CliUtils.VALIDATION_ONLY);

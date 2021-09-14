@@ -3,14 +3,14 @@ package com.joveo.bulkUpdater.validationRules.field;
 import com.joveo.bulkUpdater.model.ValidationResult;
 import com.joveo.bulkUpdater.util.Util;
 import com.joveo.bulkUpdater.validationRules.FieldLevelRule;
-import com.joveo.eqrtestsdk.models.RuleOperator;
+import com.joveo.eqrtestsdk.models.Freq;
 import lombok.AllArgsConstructor;
 import org.apache.commons.csv.CSVRecord;
 
 import java.util.Arrays;
 
 @AllArgsConstructor
-public class OperatorCheck extends FieldLevelRule {
+public class FreqCheck extends FieldLevelRule {
 
     private String columnName;
 
@@ -21,20 +21,12 @@ public class OperatorCheck extends FieldLevelRule {
         ValidationResult result = this.rule.validate(record);
 
         String val = record.get(columnName);
-
         if(val.isBlank()){
             return result;
         }
-
-        RuleOperator operator = Util.searchEnum(RuleOperator.class, val);
-        if(operator == null){
-            if(val.equalsIgnoreCase("ALL") || val.equalsIgnoreCase("AND") ||
-            val.equalsIgnoreCase("OR") || val.equalsIgnoreCase("ANY")){
-                return result;
-            }
-
-            result.updateResult(false, String.format(this.errMsg(), record.get(columnName),
-                    columnName, record.getRecordNumber(), Arrays.toString(RuleOperator.values())));
+        Freq freq = Util.searchEnum(Freq.class, val);
+        if(freq == null){
+            result.updateResult(false, String.format(this.errMsg(), val, columnName, record.getRecordNumber(), Arrays.toString(Freq.values())));
         }
 
         return result;
@@ -42,6 +34,6 @@ public class OperatorCheck extends FieldLevelRule {
 
     @Override
     public String errMsg() {
-        return "Valid operator expected but got: %s  for %s at row number: %d, valid operators are ALL, AND, OR, ANY, %s";
+        return "%s is not a valid cap value for column: %s for row num: %d , allowed values are: %s";
     }
 }
