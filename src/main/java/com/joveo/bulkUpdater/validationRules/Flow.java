@@ -29,6 +29,10 @@ public abstract class Flow {
         failedRows = new ArrayList<>();
     }
 
+    public void setDriver(Driver driver){
+        this.driver = driver;
+    }
+
     public abstract FieldLevelRule buildRules();
 
     public abstract void processRecord(CSVRecord record);
@@ -80,7 +84,7 @@ public abstract class Flow {
         try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
             pw.println("RowNumber,jobGroupId,Reason");
             failedRows.stream()
-                    .map(d -> Util.escapeSpecialCharacters(d))
+                    .map(Util::escapeSpecialCharacters)
                     .forEach(pw::println);
         }
     }

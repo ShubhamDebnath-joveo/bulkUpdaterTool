@@ -1,4 +1,0 @@
-RowNumber,jobGroupId,Reason
-1,b84dba55-f805-41fa-8844-2c34983822d2$jobgroup$default,Default jobGroup will be ignored for row num: 1
-2,959cbfaf-9919-4a24-9716-0de69d63869f,corresponding placement name has to be defined since placements_6_bid is defined at row number: 2,For input string: 56s  for placements_6_bid at row number: 2
-3,87e6c947-2f8a-43ea-9556-900324018289,For input string: 80.0A  for caps_clicks_thresholdP at row number: 3

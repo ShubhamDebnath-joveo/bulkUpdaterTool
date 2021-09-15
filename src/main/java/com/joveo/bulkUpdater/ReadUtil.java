@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ReadUtil {
 
-    private static int lowestNumPlacement = -1;
-    private static int highestNumPlacement = -1;
     private static final String CSV_FILE_NAME = "validation-errors.csv";
 
     public static void readFile() {
@@ -44,28 +42,35 @@ public class ReadUtil {
         try {
             in = new FileReader(file);
             List<CSVRecord> records = CSVFormat.DEFAULT.builder().setIgnoreEmptyLines(true).setHeader().build().parse(in).getRecords();
-            Driver driver = Driver.start(username, password, environment);
 
             CSVRecord firstRecord = records.get(0);
-            Flow flow = FlowFactory.getFLow(firstRecord.toMap().keySet(), driver);
+            Flow flow = FlowFactory.getFLow(firstRecord.toMap().keySet(), null);
             FieldLevelRule rules = flow.buildRules();
 
-            records.stream().map(record -> rules.validate(record)).forEach(
+            records.stream().map(rules::validate).forEach(
                     result -> {
-                        if(!result.isValid()){
+                        if (!result.isValid()) {
                             log.info(result.toString());
                             errorRows.add(result);
-                        }else {
-                            if(!validationOnly){
-                                validRows.add(result);
-                            }
+                        } else {
+
+                            validRows.add(result);
                         }
                     }
             );
 
-            validRows.forEach(row -> flow.processRecord(row.getRecord()));
-            flow.writeFailedRows();
+            if (!validationOnly) {
+                Driver driver = Driver.start(username, password, environment);
+                flow.setDriver(driver);
+                validRows.forEach(row -> flow.processRecord(row.getRecord()));
+                flow.writeFailedRows();
+            }
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
 
             File csvOutputFile = new File(CSV_FILE_NAME);
             try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
@@ -75,11 +80,7 @@ public class ReadUtil {
                         .forEach(pw::println);
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (MojoException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

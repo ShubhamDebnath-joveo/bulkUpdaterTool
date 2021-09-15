@@ -27,7 +27,7 @@ public class CreateFlow extends Flow {
             "caps_applies_value", "caps_budget_thresholdP", "caps_clicks_thresholdP",
             "caps_applies_thresholdP");
     private static List<String> booleanFields = List.of("caps_budget_pacing", "caps_budget_locked", "caps_clicks_pacing",
-            "caps_clicks_locked","caps_applies_pacing", "caps_applies_locked");
+            "caps_clicks_locked", "caps_applies_pacing", "caps_applies_locked");
     private static List<String> placementFields = List.of("value", "bid", "caps_budget_cap",
             "caps_budget_value", "caps_budget_pacing", "caps_budget_thresholdP", "caps_budget_locked", "is_active");
 
@@ -37,8 +37,8 @@ public class CreateFlow extends Flow {
         FieldLevelRule rule = new FieldLevelRule() {
         };
 
-        for(String coreField: mandatoryFields){
-            if (!headers.contains(coreField) ) {
+        for (String coreField : mandatoryFields) {
+            if (!headers.contains(coreField)) {
                 throw new JoveoException(coreField + " not found in sheet");
             }
         }
@@ -50,15 +50,15 @@ public class CreateFlow extends Flow {
                     throw new JoveoException(keyPrefix + " not found in sheet");
                 }
 
-                if(field.equals("bid")){
+                if (field.equals("bid")) {
                     rule = new PlacementNameCheck(keyPrefix, rule);
                 }
 
-                if(keyPrefix.contains("bid") || keyPrefix.contains("budget_value") ||keyPrefix.contains("thresholdP")){
+                if (keyPrefix.contains("bid") || keyPrefix.contains("budget_value") || keyPrefix.contains("thresholdP")) {
                     rule = new DoubleCheck(keyPrefix, rule);
                 }
 
-                if(field.equals("is_active") || field.equals("caps_budget_locked") || field.equals("caps_budget_pacing")){
+                if (field.equals("is_active") || field.equals("caps_budget_locked") || field.equals("caps_budget_pacing")) {
                     rule = new BooleanCheck(keyPrefix, rule);
                 }
             }
@@ -70,7 +70,7 @@ public class CreateFlow extends Flow {
                 rule = new BlankCheck(colName, rule);
             }
 
-            if(colName.equalsIgnoreCase("jobGroupName")){
+            if (colName.equalsIgnoreCase("jobGroupName")) {
                 rule = new DuplicateCheck(colName, rule);
             }
 
@@ -82,11 +82,11 @@ public class CreateFlow extends Flow {
                 rule = new BooleanCheck(colName, rule);
             }
 
-            if(colName.contains("rules_operator") || colName.equalsIgnoreCase("filters_operator")){
+            if (colName.contains("rules_operator") || colName.equalsIgnoreCase("filters_operator")) {
                 rule = new OperatorCheck(colName, rule);
             }
 
-            if(colName.endsWith("_cap")){
+            if (colName.endsWith("_cap")) {
                 rule = new FreqCheck(colName, rule);
             }
         }
@@ -95,10 +95,20 @@ public class CreateFlow extends Flow {
 
     @Override
     public void processRecord(CSVRecord record) {
+        JobGroupDto jgDto;
+        JobGroup jobGroup = null;
         try {
-            JobGroupDto jgDto = recordToJG(record);
-            JobGroup jobGroup = driver.createJobGroup(jgDto, true);
+            jgDto = recordToJG(record);
+            jobGroup = driver.createJobGroup(jgDto, true);
+            log.info("Created " + jobGroup.getId() + " for name " + record.get("jobGroupName"));
+        } catch (Exception e) {
+            String msg = "Record: " + record.getRecordNumber() + " JobGroup Creation failed for name " + record.get("jobGroupName") + " because " + e.getMessage();
+            log.info(msg);
+            failedRows.add(record.getRecordNumber() + "," + record.get("jobGroupName") + "," + e.getMessage());
+            return;
+        }
 
+        try {
             if (record.isMapped("jobGroup_activeStatus") && !isEmpty(record.get("jobGroup_activeStatus"))) {
                 String status = record.get("jobGroup_activeStatus");
                 if (status.equals("A")) {
@@ -107,10 +117,8 @@ public class CreateFlow extends Flow {
                     jobGroup.pauseJobGroup();
                 }
             }
-
-            log.info("Created " + jobGroup.getId() + " for name " + record.get("jobGroupName"));
         } catch (Exception e) {
-            String msg = "Record: " + record.getRecordNumber() + " for name " + record.get("jobGroupName") + " because " + e.getMessage();
+            String msg = "Record: " + record.getRecordNumber() + " Enable/ Pause failed for name " + record.get("jobGroupName") + " because " + e.getMessage();
             log.info(msg);
             failedRows.add(record.getRecordNumber() + "," + record.get("jobGroupName") + "," + e.getMessage());
         }
@@ -140,8 +148,8 @@ public class CreateFlow extends Flow {
         if (record.isMapped("startDate") && !isEmpty(record.get("startDate")))
             jgDto.setStartDate(LocalDate.parse(record.get("startDate")));
 
-            if (record.isMapped("endDate") && !isEmpty(record.get("endDate")))
-                jgDto.setEndDate(LocalDate.parse(record.get("endDate")));
+        if (record.isMapped("endDate") && !isEmpty(record.get("endDate")))
+            jgDto.setEndDate(LocalDate.parse(record.get("endDate")));
 
         if (record.isMapped("cpcBid") && !isEmpty(record.get("cpcBid")))
             jgDto.setCpcBid(Double.parseDouble(record.get("cpcBid")));
@@ -150,30 +158,29 @@ public class CreateFlow extends Flow {
             jgDto.setCpaBid(Double.parseDouble(record.get("cpaBid")));
 
 
-        for(String capType: List.of("budget", "clicks", "applies")){
+        for (String capType : List.of("budget", "clicks", "applies")) {
             String capPrefix = "caps_" + capType + "_";
 
-            if(record.isMapped(capPrefix + "value") && !isEmpty(record.get(capPrefix + "value"))){
+            if (record.isMapped(capPrefix + "value") && !isEmpty(record.get(capPrefix + "value"))) {
                 pacing = record.isMapped(capPrefix + "pacing") && !isEmpty(record.get(capPrefix + "pacing")) && Boolean.parseBoolean(record.get(capPrefix + "pacing"));
                 freq = record.isMapped(capPrefix + "cap") && !isEmpty(record.get(capPrefix + "cap")) ? Util.searchEnum(Freq.class, record.get(capPrefix + "cap")) : Freq.Monthly;
                 threshold = record.isMapped(capPrefix + "thresholdP") && !isEmpty(record.get(capPrefix + "thresholdP")) ? Double.parseDouble(record.get(capPrefix + "thresholdP")) : 80;
                 value = Double.parseDouble(record.get(capPrefix + "value"));
 
-                if(capType.equals("budget"))
+                if (capType.equals("budget"))
                     jgDto.setBudgetCap(pacing, freq, threshold, value);
-                else if(capType.equals("clicks"))
-                    jgDto.setClickCap(pacing, freq, threshold, (int)value);
+                else if (capType.equals("clicks"))
+                    jgDto.setClickCap(pacing, freq, threshold, (int) value);
                 else
-                    jgDto.setApplyCap(pacing, freq, threshold, (int)value);
+                    jgDto.setApplyCap(pacing, freq, threshold, (int) value);
             }
         }
 
         filterOperator = record.get("filters_operator");
 
-        if(filterOperator.equalsIgnoreCase("ALL") || filterOperator.equalsIgnoreCase("AND")){
+        if (filterOperator.equalsIgnoreCase("ALL") || filterOperator.equalsIgnoreCase("AND")) {
             filter = new GroupingJobFilter(GroupOperator.AND, null);
-        }
-        else if(filterOperator.equalsIgnoreCase("ANY") || filterOperator.equalsIgnoreCase("OR")){
+        } else if (filterOperator.equalsIgnoreCase("ANY") || filterOperator.equalsIgnoreCase("OR")) {
             filter = new GroupingJobFilter(GroupOperator.OR, null);
         }
 
@@ -184,25 +191,25 @@ public class CreateFlow extends Flow {
             data = null;
             String filterPrefix = "filters_operator_rules_";
 
-            if (record.isMapped(filterPrefix + "field_1_" + i) && !isEmpty(record.get(filterPrefix + "field_1_" + i))){
+            if (record.isMapped(filterPrefix + "field_1_" + i) && !isEmpty(record.get(filterPrefix + "field_1_" + i))) {
                 field = record.get(filterPrefix + "field_1_" + i);
             }
 
-            if (record.isMapped(filterPrefix + "operator_1_" + i) && !isEmpty(record.get(filterPrefix + "operator_1_" + i))){
+            if (record.isMapped(filterPrefix + "operator_1_" + i) && !isEmpty(record.get(filterPrefix + "operator_1_" + i))) {
                 operator = record.get(filterPrefix + "operator_1_" + i);
             }
 
-            if (record.isMapped(filterPrefix + "data_1_" + i) && !isEmpty(record.get(filterPrefix + "data_1_" + i))){
+            if (record.isMapped(filterPrefix + "data_1_" + i) && !isEmpty(record.get(filterPrefix + "data_1_" + i))) {
                 data = record.get(filterPrefix + "data_1_" + i);
             }
 
-            if(field == null || operator == null || data == null){
+            if (field == null || operator == null || data == null) {
                 continue;
             }
             rules.add(new JobFilter(Util.searchEnum(RuleOperator.class, operator), field, data));
         }
 
-        if(rules.size() == 0){
+        if (rules.size() == 0) {
             throw new JoveoException("At least 1 rule needs to be specified in sheet to create a new jobGroup");
         }
 
@@ -214,9 +221,9 @@ public class CreateFlow extends Flow {
             String keyPrefix = "placements_" + i + "_";
 
             placementName = record.get(keyPrefix + "value");
-            if( record.isMapped(keyPrefix + "is_active") && !isEmpty(record.get(keyPrefix + "is_active"))) {
+            if (record.isMapped(keyPrefix + "is_active") && !isEmpty(record.get(keyPrefix + "is_active"))) {
                 active = Boolean.parseBoolean(record.get(keyPrefix + "is_active"));
-                if(!active) {
+                if (!active) {
                     jgDto.removePlacement(placementName);
                 }
             }
@@ -228,7 +235,7 @@ public class CreateFlow extends Flow {
             JobGroupDto.JobGroupParams.Placements placement = new JobGroupDto.JobGroupParams.Placements(placementName);
             placement.setBid(Double.parseDouble(record.get(keyPrefix + "bid")));
 
-            if(record.isMapped(keyPrefix + "caps_budget_value") && !isEmpty(record.get(keyPrefix + "caps_budget_value"))) {
+            if (record.isMapped(keyPrefix + "caps_budget_value") && !isEmpty(record.get(keyPrefix + "caps_budget_value"))) {
                 pacing = record.isMapped(keyPrefix + "caps_budget_pacing") && !isEmpty(record.get(keyPrefix + "caps_budget_pacing")) && Boolean.parseBoolean(record.get(keyPrefix + "caps_budget_pacing"));
                 freq = record.isMapped(keyPrefix + "caps_budget_cap") && !isEmpty(record.get(keyPrefix + "caps_budget_cap")) ? Util.searchEnum(Freq.class, record.get(keyPrefix + "caps_budget_cap")) : Freq.Monthly;
                 threshold = record.isMapped(keyPrefix + "caps_budget_thresholdP") && !isEmpty(record.get(keyPrefix + "caps_budget_thresholdP")) ? Double.parseDouble(record.get(keyPrefix + "caps_budget_thresholdP")) : 80;
@@ -242,7 +249,7 @@ public class CreateFlow extends Flow {
             placements.add(placement);
         }
 
-        if(placements.size() == 0){
+        if (placements.size() == 0) {
             throw new JoveoException("At least 1 placement needs to be specified properly in sheet to create a new jobGroup");
         }
 

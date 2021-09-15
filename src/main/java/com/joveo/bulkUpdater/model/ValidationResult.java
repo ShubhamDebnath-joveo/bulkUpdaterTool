@@ -15,10 +15,9 @@ public class ValidationResult {
     private List<String> messages;
     private CSVRecord record;
 
-    public ValidationResult updateResult(boolean valid, String message){
+    public void updateResult(boolean valid, String message){
         this.valid &= valid;
         this.messages.add(message);
-        return this;
     }
 
     @Override

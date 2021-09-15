@@ -107,9 +107,11 @@ public class EditFlow extends Flow {
 
     @Override
     public void processRecord(CSVRecord record) {
-        JobGroupDto jgDto = recordToJGUpdate(record);
+        JobGroupDto jgDto = null;
+        JobGroup jobGroup = null;
         try {
-            JobGroup jobGroup = driver.getExistingJobGroup(CliUtils.getOption(CliUtils.CLIENT_ID), record.get("jobGroupId"));
+            jgDto = recordToJGUpdate(record);
+            jobGroup = driver.getExistingJobGroup(CliUtils.getOption(CliUtils.CLIENT_ID), record.get("jobGroupId"));
 
             if (record.isMapped("jobGroup_activeStatus") && !isEmpty(record.get("jobGroup_activeStatus"))) {
                 String status = record.get("jobGroup_activeStatus");
@@ -119,11 +121,18 @@ public class EditFlow extends Flow {
                     jobGroup.pauseJobGroup();
                 }
             }
+        }catch (Exception e){
+            String msg = "Record: " + record.getRecordNumber() + " Enable/ Pause failed for " + record.get("jobGroupId") + " for name " + record.get("jobGroupName") + " because " + e.getMessage();
+            log.info(msg);
+            failedRows.add(record.getRecordNumber() + "," + record.get("jobGroupId") + "," + e.getMessage());
+            return;
+        }
 
+        try{
             jobGroup.edit(jgDto);
             log.info("Updated " + record.get("jobGroupId") + " for name " + record.get("jobGroupName"));
         } catch (Exception e) {
-            String msg = "Record: " + record.getRecordNumber() + " Failed for " + record.get("jobGroupId") + " for name " + record.get("jobGroupName") + " because " + e.getMessage();
+            String msg = "Record: " + record.getRecordNumber() + " Update Failed for " + record.get("jobGroupId") + " for name " + record.get("jobGroupName") + " because " + e.getMessage();
             log.info(msg);
             failedRows.add(record.getRecordNumber() + "," + record.get("jobGroupId") + "," + e.getMessage());
         }
